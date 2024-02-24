@@ -10,7 +10,7 @@ app = Flask(__name__)
 # Load the trained model
 # with open('C:/Users/Admin/Documents/GitHub/Sound-processing/Test-soundProcessing/trained_model.pkl', 'rb') as file:
 #     model = pickle.load(file)
-model = tf.keras.models.load_model('C:/Users/Admin/Documents/GitHub/Sound-processing/WEb/model.h5')
+model = tf.keras.models.load_model('C:/Users/duyma/Documents/GitHub/Speech-Recognize/Data/WEb/model.h5')
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -19,21 +19,21 @@ def home():
 def predict():
     # Get the input data from the form
     input_data = request.form['input_data']
-    TEST_PATH='C:/Users/Admin/Documents/GitHub/Sound-processing/Data/LibriSpeech/testWebData/'
+    TEST_PATH='C:/Users/duyma/Documents/GitHub/Speech-Recognize/Data/Data/LibriSpeech/testWebData'
     Mfcc=MFCC(TEST_PATH,input_data)
-    indices = np.arange(Mfcc.shape[1])
-    A=np.transpose(Mfcc[:,np.random.choice(indices, size=50, replace=False)])
+    A = Mfcc[:,0:400]
+    print(A)
     A=np.expand_dims(A, axis=0)
     prediction = model.predict(A)
     print("prediction shape:", prediction)
     a=np.argmax(prediction)
     pred=np.array([a])
 # Load the label encoder
-    with open('C:/Users/Admin/Documents/GitHub/Sound-processing/Test-soundProcessing/label_encoder.pkl', 'rb') as f:
+    with open('C:/Users/duyma/Documents/GitHub/Speech-Recognize/Data/WEb/label_encoder.pkl', 'rb') as f:
         label_encoder = pickle.load(f)
     
     # Load the encoded data as a NumPy array
-    encoded_data = np.load('C:/Users/Admin/Documents/GitHub/Sound-processing/WEb/encoded_data.npy')
+    encoded_data = np.load('C:/Users/duyma/Documents/GitHub/Speech-Recognize/Data/WEb/encoded_data.npy')
 
     # Decode the encoded data
 

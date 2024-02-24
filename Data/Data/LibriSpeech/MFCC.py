@@ -4,8 +4,8 @@ from scipy.io import wavfile
 import scipy.fftpack as fft
 from scipy.signal import get_window
 import IPython.display as idp
-def MFCC(TRAIN_PATH,file):
-    audio, sample_rate, = sf.read(TRAIN_PATH + file)
+def MFCC(TRAIN_PATH):
+    audio, sample_rate, = sf.read(TRAIN_PATH)
     def normalize_audio(audio):
         audio = audio / np.max(np.abs(audio))
         return audio
