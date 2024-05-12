@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Prediction and Record Audio</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Model Prediction</h1>
+    <form action="/predict" method="POST">
+        <input type="text" name="input_data" placeholder="Enter data">
+        <input type="submit" value="Predict">
+    </form>
+
+    <h1>Record Audio</h1>
+    <form id="record-form" action="/record" method="post">
+        <button id="record-button" type="submit">Start Recording</button>
+    </form>
+
+    <img id="mic-icon" src="/static/micro.jpg" style="display: none; width: 100px; height: 100px; position: absolute; top: 250px; left: 10px;">
+    <script>
+        document.getElementById("record-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var micIcon = document.getElementById("mic-icon");
+            micIcon.style.display = "inline-block";
+            var form = document.getElementById("record-form");
+            form.submit();
+        });
+    </script>
+    <h1>Predict Audio</h1>
+    <form id="predict-form" action="/predict_voice" method="post">
+        <button id="record-button" type="submit">Start Recording</button>
+    </form>
+
+    <img id="mic-icon" src="/static/micro.jpg" style="display: none; width: 100px; height: 100px; position: absolute; top: 250px; left: 10px;">
+    <script>
+        document.getElementById("predict-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var micIcon = document.getElementById("mic-icon");
+            micIcon.style.display = "inline-block";
+            var form = document.getElementById("predict-form");
+            form.submit();
+        });
+    </script>
+</body>
+</html>
