@@ -1,0 +1,10 @@
+transformers
+datasets
+torch
+numpy
+pickle
+gdown
+flask
+pyaudio
+soundfile
+accelerate
