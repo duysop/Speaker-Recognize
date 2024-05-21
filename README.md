@@ -170,4 +170,4 @@ weight_decay=0.0,
 
 # **Evaluate**
 
-    ![Alt text](<Screenshot 2024-05-22 000234.png>)
+    ![Screenshot 2024-05-22 000234](https://github.com/duysop/Speaker-Recognize/assets/103120531/4e9f5981-a2f2-4808-b53e-5a503d5e7d7a)
