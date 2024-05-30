@@ -169,6 +169,7 @@ Dataset can be download at [Driver](https://drive.google.com/file/d/1POEVZSWE0v0
     run file WavLM/wavlm.ipynb
 
 # **Evaluate**
-
+    *Metric
+        Accuracy_score ( In multilabel classification, this function computes subset accuracy: the set of labels predicted for a sample must exactly match the corresponding set of labels in y_true )
 ![Screenshot 2024-05-22 000234](https://github.com/duysop/Speaker-Recognize/assets/103120531/b182b072-a34a-4f14-8c8b-63d416b669d3)
 
