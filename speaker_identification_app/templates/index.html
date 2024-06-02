@@ -37,11 +37,12 @@
         <div class="text-center">
             <h1 class="my-4">Trải nghiệm</h1>
             <div class="record-section">
-                <button type="button" class="btn btn-primary">🎤 Ghi âm</button>
+                <button type="button" class="btn btn-primary" onclick="startRecording()">🎤 Ghi âm</button>
+                <button type="button" class="btn btn-primary" onclick="stopRecording()">🛑 Dừng ghi</button>
                 <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">⬆️
                     Tải lên</button>
                 <input type="file" id="fileInput" style="display:none" onchange="uploadFile(event)">
-                <button type="button" class="btn btn-outline-primary">🔊 File mẫu 1</button>
+                <button type="button" class="btn btn-outline-primary">🔊 File mẫu </button>
                 <button type="button" class="btn btn-outline-primary" onclick="predictFile()">
                     <i class="fas fa-search"></i> Dự đoán
                 </button>
@@ -85,9 +86,38 @@
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
                 integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
                 crossorigin="anonymous"></script>
+            <!-- RecordRTC Library -->
+            <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
             <script>
+                let recorder;
+                let audioBlob;
                 let uploadedFile = null;
+                function startRecording() {
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                        recorder = new RecordRTC(stream, {
+                            type: 'audio',
+                            mimeType: 'audio/wav',
+                            recorderType: StereoAudioRecorder,
+                            desiredSampRate: 16000,
+                            numberOfAudioChannels: 1
+                        });
+                        recorder.startRecording();
+                    }).catch(error => {
+                        console.error('Error accessing media devices.', error);
+                    });
+                }
 
+                function stopRecording() {
+                    recorder.stopRecording(() => {
+                        audioBlob = recorder.getBlob();
+                        const audioURL = URL.createObjectURL(audioBlob);
+                        const audioPlayer = document.getElementById('audioPlayer');
+                        console.log(audioURL);
+                        audioPlayer.src = audioURL;
+                        audioPlayer.style.display = 'block';
+                        audioPlayer.load();
+                    });
+                }
                 function uploadFile(event) {
                     uploadedFile = event.target.files[0];
                     const formData = new FormData();
@@ -108,6 +138,7 @@
                                 uploadStatus.textContent = `File uploaded successfully: ${data.filename}`;
                                 console.log(`File URL: ${fileURL}`); // Debugging: Log the file URL
                                 audioPlayer.src = fileURL;
+                                audioBlob = null;
                                 audioPlayer.style.display = 'block';
                                 audioPlayer.load();
                             }
@@ -119,13 +150,19 @@
                 }
 
                 function predictFile() {
-                    if (!uploadedFile) {
+
+                    const formData = new FormData();
+                    if (audioBlob) {
+                        formData.append('file', audioBlob, 'recorded_audio.wav');
+                    }
+                    else if (!uploadedFile) {
                         alert("Please upload a file first.");
                         return;
                     }
-
-                    const formData = new FormData();
-                    formData.append('file', uploadedFile);
+                    else if (uploadedFile){
+                        formData.append('file', uploadedFile);
+                        console.log(uploadedFile);
+                    }
 
                     fetch('/predict', {
                         method: 'POST',
