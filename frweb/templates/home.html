@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải nghiệm</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .record-section {
+            margin-top: 20px;
+        }
+
+        .record-section .btn {
+            margin-right: 10px;
+        }
+
+        .record-section .btn:last-child {
+            margin-right: 0;
+        }
+
+        .record-box {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .user-info {
+            margin-top: 20px;
+        }
+
+        .user-info img {
+            max-width: 100px;
+            margin-right: 20px;
+        }
+
+        .attendance-history {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="text-center">
+            <h1 class="my-4">Trải nghiệm</h1>
+            <div class="record-section">
+                <button type="button" class="btn btn-primary" id="startBtn" onclick="startRecording()">🎤 Ghi
+                    âm</button>
+                <button type="button" class="btn btn-primary" id="stopBtn" onclick="stopRecording()" disabled>🛑 Dừng
+                    ghi</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">⬆️
+                    Tải lên</button>
+                <input type="file" id="fileInput" style="display:none" onchange="uploadFile(event)">
+                <button type="button" class="btn btn-outline-primary">🔊 File mẫu </button>
+                <button type="button" class="btn btn-outline-primary" onclick="predictFile()">
+                    <i class="fas fa-search"></i> Dự đoán
+                </button>
+                <button id="searchToggle" class="btn btn-primary">Tìm kiếm</button>
+                <button type="button" class="btn btn-outline-primary" onclick="window.location.href='/today'">
+                    <i class="fas fa-list"></i> Xem điểm danh trong tháng
+                </button>
+            </div>
+            <div class="record-box">
+                <p id="uploadStatus">Ghi âm trực tiếp, tải file ghi âm sẵn hoặc sử dụng file mẫu để trải nghiệm</p>
+                <audio id="audioPlayer" controls style="display:none; width: 100%; margin-top: 10px;"></audio>
+                <p id="predictionResult"></p>
+                <div id="searchSection" class="search-section mt-4 d-none">
+                    <h5>Tìm kiếm thông tin người dùng:</h5>
+                    <input type="text" id="searchName" class="form-control" placeholder="Nhập tên">
+                    <button type="button" class="btn btn-primary mt-2" onclick="searchUser()">Tìm kiếm</button>
+                </div>
+                <div id="userInfo" class="user-info d-flex align-items-center"></div>
+                <div id="attendanceHistory" class="attendance-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+        crossorigin="anonymous"></script>
+    <!-- RecordRTC Library -->
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
+    <script>
+        let recorder;
+        let audioBlob;
+        let uploadedFile = null;
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                recorder = new RecordRTC(stream, {
+                    type: 'audio',
+                    mimeType: 'audio/wav',
+                    recorderType: StereoAudioRecorder,
+                    desiredSampRate: 16000,
+                    numberOfAudioChannels: 1
+                });
+                recorder.startRecording();
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            }).catch(error => {
+                console.error('Error accessing media devices.', error);
+            });
+        }
+
+        function stopRecording() {
+            recorder.stopRecording(() => {
+                audioBlob = recorder.getBlob();
+                const audioURL = URL.createObjectURL(audioBlob);
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioURL;
+                audioPlayer.style.display = 'block';
+                audioPlayer.load();
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            });
+        }
+
+        function uploadFile(event) {
+            uploadedFile = event.target.files[0];
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const uploadStatus = document.getElementById('uploadStatus');
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    if (data.error) {
+                        uploadStatus.textContent = `Error: ${data.error}`;
+                    } else {
+                        const fileURL = `/uploads/${data.filename}`;
+                        uploadStatus.textContent = `File uploaded successfully: ${data.filename}`;
+                        audioPlayer.src = fileURL;
+                        audioBlob = null;
+                        audioPlayer.style.display = 'block';
+                        audioPlayer.load();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('uploadStatus').textContent = 'Upload failed.';
+                });
+        }
+
+        function predictFile() {
+            const formData = new FormData();
+            if (audioBlob) {
+                formData.append('file', audioBlob, 'recorded_audio.wav');
+            }
+            else if (!uploadedFile) {
+                alert("Please upload a file first.");
+                return;
+            }
+            else if (uploadedFile) {
+                formData.append('file', uploadedFile);
+            }
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const predictionResult = document.getElementById('predictionResult');
+                    if (data.error) {
+                        predictionResult.textContent = `Error: ${data.error}`;
+                    } else {
+                        // predictionResult.textContent = `Prediction result: ${data}`;
+                        displayUserInfo(data);
+                        fetchAttendanceHistory(data.name);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('predictionResult').textContent = 'Prediction failed.';
+                });
+        }
+
+        function displayUserInfo(user) {
+            const userInfo = document.getElementById('userInfo');
+            userInfo.innerHTML = `
+                <img src="data:image/jpeg;base64,${user.image}" alt="User Photo" class="img-thumbnail">
+                <div>
+                    <p>Name: ${user.name}</p>
+                    <p>Email: ${user.email}</p>
+                    <p>Phone: ${user.phone}</p>
+                </div>
+            `;
+        }
+
+        function fetchAttendanceHistory(name) {
+            fetch(`/attendance_history/${name}`)
+                .then(response => response.json())
+                .then(data => {
+                    const attendanceHistory = document.getElementById('attendanceHistory');
+                    attendanceHistory.innerHTML = '<h5>Lịch sử điểm danh:</h5>';
+                    if (data.error) {
+                        attendanceHistory.innerHTML += `<p>Error: ${data.error}</p>`;
+                    } else {
+                        data.forEach(record => {
+                            attendanceHistory.innerHTML += `<p>${record.timestamp}</p>`;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('attendanceHistory').textContent = 'Failed to load attendance history.';
+                });
+        }
+
+        function searchUser() {
+            const searchName = document.getElementById('searchName').value;
+            if (!searchName) {
+                alert("Vui lòng nhập tên.");
+                return;
+            }
+
+            fetch(`/search_user?name=${searchName}`)
+                .then(response => response.json())
+                .then(data => {
+                    const predictionResult = document.getElementById('predictionResult');
+                    if (data.error) {
+                        predictionResult.textContent = `Error: ${data.error}`;
+                    } else {
+                        // predictionResult.textContent = `Search result: ${data.name}`;
+                        displayUserInfo(data);
+                        fetchAttendanceHistory(data.name);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('predictionResult').textContent = 'Search failed.';
+                });
+        }
+
+        document.getElementById('searchToggle').addEventListener('click', function () {
+            const searchSection = document.getElementById('searchSection');
+            searchSection.classList.toggle('d-none');
+        });
+    </script>
+</body>
+
+</html>
